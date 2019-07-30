@@ -113,6 +113,25 @@
                                     <v-card>
                                         <v-card-title></v-card-title>
                                         <v-card-text>
+                                            <template v-for="index in json.length">
+                                                <v-container grid-list-md>
+                                                    <v-layout align-center
+                                                              justify-center>
+                                                        <v-flex xs12>
+                                                            <v-data-table dense
+                                                                    :headers="headers[index-1]"
+                                                                    :items="json[index-1]"
+                                                                    hide-default-header
+                                                                    class="elevation-1"
+                                                            >
+                                                                <template v-slot:item.A="{ item }">
+                                                                    <v-chip :color="red" dark>{{ item.A }}</v-chip>
+                                                                </template>
+                                                            </v-data-table>
+                                                        </v-flex>
+                                                    </v-layout>
+                                                </v-container>
+                                            </template>
 
                                         </v-card-text>
                                         <v-card-actions>
@@ -208,7 +227,8 @@
             sheets: [],
             sheetsToImport: [],
 
-            json: null,
+            headers: [],
+            json: [],
 
             loading: false,
             snackbar: false,
@@ -235,8 +255,6 @@
                                 self.wb = XLSX.read(data, {type: "binary"});
                                 self.sheets = self.wb.SheetNames;
                                 self.sheetsToImport = self.wb.SheetNames;
-
-
                             };
                             setTimeout(function () {
                                 reader.readAsBinaryString(self.file);
@@ -250,11 +268,19 @@
 
                 },
                 uploadSheet: function () {
+                    this.headers = [];
+                    this.json = [];
                     this.e1 = 2;
                     for (var sheetIndex in this.sheetsToImport) {
                         var sheetName = this.sheetsToImport[sheetIndex];
-                        const json = XLSX.utils.sheet_to_json(this.wb.Sheets[sheetName], {header: "A", defval: ""});
-                        console.log(json);
+                        var j = XLSX.utils.sheet_to_json(this.wb.Sheets[sheetName], {header: "A", defval: ""});
+                        var keys = Object.keys(j[0]);
+                        var header = [];
+                        for (var i in keys) {
+                            header.push({text: keys[i], value: keys[i]});
+                        }
+                        this.headers.push(header);
+                        this.json.push(j);
                     }
                 }
             }
