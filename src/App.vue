@@ -1,13 +1,15 @@
 <template>
     <v-app id="inspire">
+
         <v-content>
             <v-app-bar
                     app
                     clipped-left
             >
                 <v-app-bar-nav-icon @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
-                <v-toolbar-title>Статус: {{status}}</v-toolbar-title>
+                <v-toolbar-title>Импорт Excel</v-toolbar-title>
             </v-app-bar>
+
 
             <v-container fluid fill-height>
                 <v-layout
@@ -57,17 +59,39 @@
                                                 <v-divider></v-divider>
                                                 <v-card-text>
                                                     <v-form>
+
                                                         <template>
-                                                            <v-file-input
-                                                                    accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel, .csv"
-                                                                    v-model="file"
-                                                                    label="Выберите файл"
-                                                                    small-chips
-                                                                    prepend-icon="mdi-paperclip"
-                                                                    :display-size="1000"
-                                                                    @change="uploadFile"
-                                                            >
-                                                            </v-file-input>
+                                                            <v-container grid-list-md>
+                                                                <v-layout align-center
+                                                                          justify-center>
+                                                                    <v-flex xs12>
+                                                                        <v-file-input
+                                                                                accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel, .csv"
+                                                                                v-model="file"
+                                                                                label="Выберите файл"
+                                                                                small-chips
+                                                                                prepend-icon="mdi-paperclip"
+                                                                                :display-size="1000"
+                                                                                @change="getSheets"
+                                                                        >
+                                                                        </v-file-input>
+                                                                    </v-flex>
+                                                                </v-layout>
+                                                            </v-container>
+                                                        </template>
+                                                        <template>
+                                                            <v-container fluid>
+                                                                <v-layout wrap>
+                                                                    <v-flex xs12>
+                                                                        <v-combobox
+                                                                                v-model="sheetsToImport"
+                                                                                :items="sheets"
+                                                                                label="Выберите листы для импорта"
+                                                                                multiple
+                                                                        ></v-combobox>
+                                                                    </v-flex>
+                                                                </v-layout>
+                                                            </v-container>
                                                         </template>
                                                     </v-form>
                                                 </v-card-text>
@@ -77,7 +101,7 @@
                                                             justify-center
                                                     >
                                                         <v-btn color="primary"
-                                                               @click="e1 = 2">Продолжить
+                                                               @click="uploadSheet">Продолжить
                                                         </v-btn>
                                                     </v-layout>
                                                 </v-card-actions>
@@ -151,6 +175,15 @@
                         </v-stepper>
                     </v-flex>
                 </v-layout>
+                <template>
+                    <v-snackbar
+                            v-model="snackbar"
+                            :timeout="500"
+                    >
+                        Загрузка листов
+                        <v-progress-circular indeterminate buffer-value="40"></v-progress-circular>
+                    </v-snackbar>
+                </template>
             </v-container>
         </v-content>
     </v-app>
@@ -168,58 +201,61 @@
             source: String,
         },
         data: () => ({
-            json: null,
-            status: "",
-            e1: 0,
             file: null,
+
+            wb: null,
+
+            sheets: [],
+            sheetsToImport: [],
+
+            json: null,
+
+            loading: false,
+            snackbar: false,
+
             drawer: null,
+            e1: 0
         }),
         methods:
             {
-                uploadFile: function () {
-                    this.status = "loaded";
+                getSheets: function () {
+                    if (this.file === null) {
+                        this.sheets = [];
+                        this.sheetsToImport = [];
+                        this.loading = false;
+                    } else {
+                        if (this.sheets.length === 0) {
+                            this.snackbar = true;
+                            this.loading = true;
+                            var self = this;
 
-                    var reader = new FileReader();
-                    reader.readAsArrayBuffer(this.file);
+                            var reader = new FileReader();
+                            reader.onload = evt => {
+                                const data = evt.target.result;
+                                self.wb = XLSX.read(data, {type: "binary"});
+                                self.sheets = self.wb.SheetNames;
+                                self.sheetsToImport = self.wb.SheetNames;
 
-                    reader.onload = function (e) {
-                        var data = new Uint8Array(reader.result);
-                        // var data = e.target.result;
-                        var workbook = XLSX.read(data, {
-                            type: 'array',
-                            codepage: "utf8"
-                        });
 
-                        var sheetNames = workbook.SheetNames;
+                            };
+                            setTimeout(function () {
+                                reader.readAsBinaryString(self.file);
+                            }, self.file.size / 40000);
 
-                        var activeSheet;
-
-                        if (sheetNames.length === 1) {
-                            activeSheet = sheetNames[0];
-                        } else {
-
+                            reader.onerror = function (ex) {
+                                console.log(ex);
+                            };
                         }
+                    }
 
-                        var json = XLSX.utils.sheet_to_json(workbook.Sheets["mrt"], {raw: true, defval: null});
-
+                },
+                uploadSheet: function () {
+                    this.e1 = 2;
+                    for (var sheetIndex in this.sheetsToImport) {
+                        var sheetName = this.sheetsToImport[sheetIndex];
+                        const json = XLSX.utils.sheet_to_json(this.wb.Sheets[sheetName], {header: "A", defval: ""});
                         console.log(json);
-
-                        // $('#wrapper')[0].innerHTML += htmlstr;
-
-                        // workbook.SheetNames.forEach(function(sheetName) {
-                        // Here is your object
-                        // var XL_row_object = XLSX.utils.sheet_to_row_object_array(workbook.Sheets[sheetName]);
-                        // var json_object = JSON.stringify(XL_row_object);
-                        // console.log(JSON.parse(json_object));
-
-                        // })
-
-                    };
-
-                    reader.onerror = function (ex) {
-                        console.log(ex);
-                    };
-
+                    }
                 }
             }
     }
