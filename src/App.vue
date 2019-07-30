@@ -21,13 +21,14 @@
                             sm12
                             md12
                     >
-                        <v-stepper v-model="e1">
+                        <v-stepper v-model="currentStep">
                             <v-stepper-header>
-                                <v-stepper-step :complete="e1 > 1" step="1">Загрузка файла</v-stepper-step>
+                                <v-stepper-step :complete="currentStep > 1" step="1">Загрузка файла</v-stepper-step>
                                 <v-divider></v-divider>
-                                <v-stepper-step :complete="e1 > 2" step="2">Определение границ таблицы</v-stepper-step>
+                                <v-stepper-step :complete="currentStep > 2" step="2">Определение границ таблицы
+                                </v-stepper-step>
                                 <v-divider></v-divider>
-                                <v-stepper-step :complete="e1 > 3" step="3">Предварительная обработка данных
+                                <v-stepper-step :complete="currentStep > 3" step="3">Предварительная обработка данных
                                 </v-stepper-step>
                                 <v-divider></v-divider>
                                 <v-stepper-step step="4">Импорт данных в БД</v-stepper-step>
@@ -44,68 +45,7 @@
                                             md4
                                     >
                                         <v-stepper-content step="1">
-                                            <v-card>
-                                                <v-toolbar
-                                                        color=""
-                                                        flat
-                                                >
-                                                    <v-layout
-                                                            align-center
-                                                            justify-center
-                                                    >
-                                                        <v-toolbar-title>Импорт Excel</v-toolbar-title>
-                                                    </v-layout>
-                                                </v-toolbar>
-                                                <v-divider></v-divider>
-                                                <v-card-text>
-                                                    <v-form>
-
-                                                        <template>
-                                                            <v-container grid-list-md>
-                                                                <v-layout align-center
-                                                                          justify-center>
-                                                                    <v-flex xs12>
-                                                                        <v-file-input
-                                                                                accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel, .csv"
-                                                                                v-model="file"
-                                                                                label="Выберите файл"
-                                                                                small-chips
-                                                                                prepend-icon="mdi-paperclip"
-                                                                                :display-size="1000"
-                                                                                @change="getSheets"
-                                                                        >
-                                                                        </v-file-input>
-                                                                    </v-flex>
-                                                                </v-layout>
-                                                            </v-container>
-                                                        </template>
-                                                        <template>
-                                                            <v-container fluid>
-                                                                <v-layout wrap>
-                                                                    <v-flex xs12>
-                                                                        <v-combobox
-                                                                                v-model="sheetsToImport"
-                                                                                :items="sheets"
-                                                                                label="Выберите листы для импорта"
-                                                                                multiple
-                                                                        ></v-combobox>
-                                                                    </v-flex>
-                                                                </v-layout>
-                                                            </v-container>
-                                                        </template>
-                                                    </v-form>
-                                                </v-card-text>
-                                                <v-card-actions>
-                                                    <v-layout
-                                                            align-center
-                                                            justify-center
-                                                    >
-                                                        <v-btn color="primary"
-                                                               @click="uploadSheet">Продолжить
-                                                        </v-btn>
-                                                    </v-layout>
-                                                </v-card-actions>
-                                            </v-card>
+                                            <excel-upload v-bind:state="this"></excel-upload>
                                         </v-stepper-content>
                                     </v-flex>
                                 </v-layout>
@@ -117,16 +57,37 @@
                                                 <v-container grid-list-md>
                                                     <v-layout align-center
                                                               justify-center>
+                                                        <v-checkbox
+                                                                v-model="titled[index-1]"
+                                                                :label="`Лист содержит заголовок`"
+                                                        ></v-checkbox>
+                                                    </v-layout>
+                                                    <v-layout align-center
+                                                              justify-center>
                                                         <v-flex xs12>
                                                             <v-data-table dense
-                                                                    :headers="headers[index-1]"
-                                                                    :items="json[index-1]"
-                                                                    hide-default-header
-                                                                    class="elevation-1"
+                                                                          :headers="headers[index-1]"
+                                                                          :items="json[index-1]"
+                                                                          :items-per-page="25"
+                                                                          hide-default-header
+                                                                          class="elevation-1"
                                                             >
-                                                                <template v-slot:item.A="{ item }">
+                                                                <template v-slot:item="{item}">
+
+                                                                    <tr @click="chooseTitle(item)"
+                                                                        v-bind:class="isTitle(item)">
+                                                                        <template v-for="value in headerValues">
+                                                                            <td>{{item[value]}}</td>
+                                                                        </template>
+                                                                    </tr>
+                                                                </template>
+
+                                                                <!--<template v-for="head in headers">
+
+                                                                <template v-slot:[head]="{ item  }">
                                                                     <v-chip :color="red" dark>{{ item.A }}</v-chip>
                                                                 </template>
+                                                                </template>-->
                                                             </v-data-table>
                                                         </v-flex>
                                                     </v-layout>
@@ -141,11 +102,11 @@
                                             >
                                                 <v-btn
                                                         color="primary"
-                                                        @click="e1 = 3"
+                                                        @click="currentStep = 3"
                                                 >
                                                     Продолжить
                                                 </v-btn>
-                                                <v-btn @click="e1 = 1" text>Отмена</v-btn>
+                                                <v-btn @click="currentStep = 1" text>Отмена</v-btn>
                                             </v-layout>
                                         </v-card-actions>
                                     </v-card>
@@ -162,11 +123,11 @@
                                             >
                                                 <v-btn
                                                         color="primary"
-                                                        @click="e1 = 4"
+                                                        @click="currentStep = 4"
                                                 >
                                                     Продолжить
                                                 </v-btn>
-                                                <v-btn @click="e1 = 2" text>Назад</v-btn>
+                                                <v-btn @click="currentStep = 2" text>Назад</v-btn>
                                             </v-layout>
                                         </v-card-actions>
                                     </v-card>
@@ -185,7 +146,7 @@
                                                 >
                                                     Импорт
                                                 </v-btn>
-                                                <v-btn @click="e1 = 3" text>Назад</v-btn>
+                                                <v-btn @click="currentStep = 3" text>Назад</v-btn>
                                             </v-layout>
                                         </v-card-actions>
                                     </v-card>
@@ -194,15 +155,7 @@
                         </v-stepper>
                     </v-flex>
                 </v-layout>
-                <template>
-                    <v-snackbar
-                            v-model="snackbar"
-                            :timeout="500"
-                    >
-                        Загрузка листов
-                        <v-progress-circular indeterminate buffer-value="40"></v-progress-circular>
-                    </v-snackbar>
-                </template>
+
             </v-container>
         </v-content>
     </v-app>
@@ -212,7 +165,7 @@
 <script>
 
     import ExcelUpload from "@/components/excel/upload";
-    import XLSX from 'xlsx';
+
 
     export default {
         components: {ExcelUpload},
@@ -220,67 +173,35 @@
             source: String,
         },
         data: () => ({
-            file: null,
-
-            wb: null,
-
-            sheets: [],
-            sheetsToImport: [],
-
             headers: [],
+            headerValues: [],
             json: [],
+            titled: [],
 
-            loading: false,
-            snackbar: false,
+            titleIndex: [],
 
             drawer: null,
-            e1: 0
+            currentStep: 0
         }),
         methods:
             {
-                getSheets: function () {
-                    if (this.file === null) {
-                        this.sheets = [];
-                        this.sheetsToImport = [];
-                        this.loading = false;
-                    } else {
-                        if (this.sheets.length === 0) {
-                            this.snackbar = true;
-                            this.loading = true;
-                            var self = this;
-
-                            var reader = new FileReader();
-                            reader.onload = evt => {
-                                const data = evt.target.result;
-                                self.wb = XLSX.read(data, {type: "binary"});
-                                self.sheets = self.wb.SheetNames;
-                                self.sheetsToImport = self.wb.SheetNames;
-                            };
-                            setTimeout(function () {
-                                reader.readAsBinaryString(self.file);
-                            }, self.file.size / 40000);
-
-                            reader.onerror = function (ex) {
-                                console.log(ex);
-                            };
-                        }
+                chooseTitle(item) {
+                    if (this.titled[0]) {
+                        // Пока что для первой таблицы
+                        var index = this.json[0].indexOf(item);
+                        this.titleIndex[0] = index;
+                        console.log(index);
                     }
-
-                },
-                uploadSheet: function () {
-                    this.headers = [];
-                    this.json = [];
-                    this.e1 = 2;
-                    for (var sheetIndex in this.sheetsToImport) {
-                        var sheetName = this.sheetsToImport[sheetIndex];
-                        var j = XLSX.utils.sheet_to_json(this.wb.Sheets[sheetName], {header: "A", defval: ""});
-                        var keys = Object.keys(j[0]);
-                        var header = [];
-                        for (var i in keys) {
-                            header.push({text: keys[i], value: keys[i]});
-                        }
-                        this.headers.push(header);
-                        this.json.push(j);
+                }
+            },
+        computed:
+            {
+                isTitle(item) {
+                    console.log("He" + this.json[0].indexOf(item));
+                    if (this.json[0].indexOf(item) === this.titled[0]) {
+                        return {background: '#777'};
+                    } else {
+                        return {background: '#fff'};
                     }
                 }
             }
