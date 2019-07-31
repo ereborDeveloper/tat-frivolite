@@ -60,6 +60,7 @@
                                                         <v-checkbox
                                                                 v-model="titled[index-1]"
                                                                 :label="`Лист содержит заголовок`"
+                                                                @change="toggleTitle"
                                                         ></v-checkbox>
                                                     </v-layout>
                                                     <v-layout align-center
@@ -73,21 +74,13 @@
                                                                           class="elevation-1"
                                                             >
                                                                 <template v-slot:item="{item}">
-
-                                                                    <tr @click="chooseTitle(item)"
-                                                                        v-bind:class="isTitle(item)">
+                                                                    <tr @click="setTitle(item)"
+                                                                        :style="{backgroundColor: rowBackground[0][getIndex(item)].color}">
                                                                         <template v-for="value in headerValues">
                                                                             <td>{{item[value]}}</td>
                                                                         </template>
                                                                     </tr>
                                                                 </template>
-
-                                                                <!--<template v-for="head in headers">
-
-                                                                <template v-slot:[head]="{ item  }">
-                                                                    <v-chip :color="red" dark>{{ item.A }}</v-chip>
-                                                                </template>
-                                                                </template>-->
                                                             </v-data-table>
                                                         </v-flex>
                                                     </v-layout>
@@ -178,31 +171,39 @@
             json: [],
             titled: [],
 
-            titleIndex: [],
+            titleIndex: 0,
+            titleColor: '#ccc',
+            blankColor: '#fff',
+            rowBackground: [],
 
             drawer: null,
             currentStep: 0
         }),
         methods:
             {
-                chooseTitle(item) {
+                toggleTitle() {
+                    if (this.titled[0]) {
+                        this.$set(this.rowBackground[0][0], 'color', this.titleColor);
+                    } else {
+                        this.$set(this.rowBackground[0][this.titleIndex], 'color', this.blankColor);
+                        this.titleIndex = 0;
+                    }
+                },
+
+                setTitle(item) {
                     if (this.titled[0]) {
                         // Пока что для первой таблицы
                         var index = this.json[0].indexOf(item);
-                        this.titleIndex[0] = index;
-                        console.log(index);
+                        this.$set(this.rowBackground[0][this.titleIndex], 'color', this.blankColor);
+                        this.titleIndex = index;
+                        this.$set(this.rowBackground[0][index], 'color', this.titleColor);
                     }
-                }
-            },
-        computed:
-            {
-                isTitle(item) {
-                    console.log("He" + this.json[0].indexOf(item));
-                    if (this.json[0].indexOf(item) === this.titled[0]) {
-                        return {background: '#777'};
-                    } else {
-                        return {background: '#fff'};
-                    }
+                },
+
+
+                getIndex(item) {
+                    var index = this.json[0].indexOf(item);
+                    return index;
                 }
             }
     }

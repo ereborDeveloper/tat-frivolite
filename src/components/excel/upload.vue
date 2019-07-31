@@ -130,15 +130,24 @@
                 this.state.json = [];
                 this.state.currentStep = 2;
                 for (var sheetIndex in this.sheetsToImport) {
+                    this.state.rowBackground.push([]);
                     var sheetName = this.sheetsToImport[sheetIndex];
                     var j = XLSX.utils.sheet_to_json(this.wb.Sheets[sheetName], {header: "A", defval: ""});
+
+                    if (j.length === 0) continue;
+
+                    for (var i in j) {
+                        this.state.rowBackground[sheetIndex].push({color: "#fff"});
+                    }
+
                     var keys = Object.keys(j[0]);
+
                     var header = [];
                     for (var i in keys) {
                         header.push({text: keys[i], value: keys[i]});
                     }
+
                     this.state.titled.push(false);
-                    this.state.titleIndex.push(-1);
                     this.state.headerValues = keys;
                     this.state.headers.push(header);
                     this.state.json.push(j);
