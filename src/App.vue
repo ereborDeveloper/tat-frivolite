@@ -62,6 +62,7 @@
                                                                           @click="updateTitle(index-1)"
                                                                           type="number"
                                                                           label="Отступ слева"
+                                                                          min="0"
                                                             ></v-text-field>
                                                         </v-flex>
                                                         <v-flex xs12 sm6 md2>
@@ -69,6 +70,7 @@
                                                                           v-model.number="bounds[index-1].top"
                                                                           type="number"
                                                                           label="Отступ сверху"
+                                                                          min="0"
                                                             ></v-text-field>
                                                         </v-flex>
                                                         <v-flex xs12 sm6 md2>
@@ -76,6 +78,7 @@
                                                                           @click="updateTitle(index-1)"
                                                                           type="number"
                                                                           label="Отступ справа"
+                                                                          min="0"
                                                             ></v-text-field>
                                                         </v-flex>
                                                         <v-flex xs12 sm6 md2>
@@ -83,6 +86,7 @@
                                                                           v-model.number="bounds[index-1].bottom"
                                                                           type="number"
                                                                           label="Отступ снизу"
+                                                                          min="0"
                                                             ></v-text-field>
                                                         </v-flex>
                                                     </v-layout>
@@ -236,12 +240,29 @@
                 },
 
                 updateTitle(tableIndex) {
-                    console.log(this.headers[tableIndex].length);
-                    console.log(this.bounds[tableIndex].left + this.bounds[tableIndex].right);
-                    if (this.bounds[tableIndex].top + this.bounds[tableIndex].bottom >= this.json[tableIndex].length ||
+
+                    //TODO: Это безобразие
+
+                    if (this.bounds[tableIndex].top > this.json[tableIndex].length) {
+                        this.bounds[tableIndex].top = this.json[tableIndex].length;
+                    }
+                    if (this.bounds[tableIndex].bottom > this.json[tableIndex].length) {
+                        this.bounds[tableIndex].bottom = this.json[tableIndex].length;
+                    }
+
+                    if (this.bounds[tableIndex].left > this.headers[tableIndex].length) {
+                        this.bounds[tableIndex].left = this.headers[tableIndex].length;
+                    }
+
+                    if (this.bounds[tableIndex].right > this.headers[tableIndex].length) {
+                        this.bounds[tableIndex].right = this.headers[tableIndex].length;
+                    }
+
+                    if (this.bounds[tableIndex].top + this.bounds[tableIndex].bottom === this.json[tableIndex].length ||
                         this.bounds[tableIndex].left + this.bounds[tableIndex].right >= this.headers[tableIndex].length) {
                         this.$set(this.titled, tableIndex, false);
                     }
+
                     this.setTitle(tableIndex, this.bounds[tableIndex].top);
                 },
 

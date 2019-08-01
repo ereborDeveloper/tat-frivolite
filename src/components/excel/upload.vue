@@ -1,6 +1,5 @@
 <template>
     <div id="excelUpload">
-
         <v-card>
             <v-toolbar
                     color=""
@@ -113,6 +112,7 @@
                             self.sheets = self.wb.SheetNames;
                             self.sheetsToImport = self.wb.SheetNames;
                         };
+                        // TODO: асинхронно фоном выполнять операцию
                         setTimeout(function () {
                             reader.readAsBinaryString(self.file);
                         }, self.file.size / 40000);
@@ -131,11 +131,14 @@
                 this.state.currentStep = 2;
                 for (var sheetIndex in this.sheetsToImport) {
                     var sheetName = this.sheetsToImport[sheetIndex];
-                    var j = XLSX.utils.sheet_to_json(this.wb.Sheets[sheetName], {header: "A", defval: ""});
+                    var currentSheetJson = XLSX.utils.sheet_to_json(this.wb.Sheets[sheetName], {
+                        header: "A",
+                        defval: ""
+                    });
 
-                    if (j.length === 0) continue;
+                    if (currentSheetJson.length === 0) continue;
 
-                    var keys = Object.keys(j[0]);
+                    var keys = Object.keys(currentSheetJson[0]);
 
                     var header = [];
                     for (var i in keys) {
@@ -144,16 +147,12 @@
 
                     this.state.headers.push(header);
                     this.state.headerValues.push(keys);
-                    this.state.json.push(j);
+                    this.state.json.push(currentSheetJson);
                     this.state.titled.push(false);
                     this.state.titleIndex.push(-1);
                     this.state.bounds.push({left: 0, top: 0, right: 0, bottom: 0});
                 }
             }
-        },
+        }
     }
 </script>
-
-<style scoped>
-
-</style>
