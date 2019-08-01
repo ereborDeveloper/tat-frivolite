@@ -59,6 +59,7 @@
                                                               justify-center>
                                                         <v-flex xs12 sm6 md2>
                                                             <v-text-field v-model.number="bounds[index-1].left"
+                                                                          @click="updateTitle(index-1)"
                                                                           type="number"
                                                                           label="Отступ слева"
                                                             ></v-text-field>
@@ -72,12 +73,13 @@
                                                         </v-flex>
                                                         <v-flex xs12 sm6 md2>
                                                             <v-text-field v-model.number="bounds[index-1].right"
+                                                                          @click="updateTitle(index-1)"
                                                                           type="number"
                                                                           label="Отступ справа"
                                                             ></v-text-field>
                                                         </v-flex>
                                                         <v-flex xs12 sm6 md2>
-                                                            <v-text-field @click="updateTitle(index-1)"
+                                                            <v-text-field @mousedown="updateTitle(index-1)"
                                                                           v-model.number="bounds[index-1].bottom"
                                                                           type="number"
                                                                           label="Отступ снизу"
@@ -107,7 +109,7 @@
                                                                     <tr @click="setTitle(index-1, json[index-1].indexOf(item))">
                                                                         <template
                                                                                 v-for="field in headerValues[index-1]">
-                                                                            <td :style="{backgroundColor: getCellStyle(index-1, item, field)}">
+                                                                            <td :class="getCellStyle(index-1, item, field)">
                                                                                 {{item[field]}}
                                                                             </td>
                                                                         </template>
@@ -205,9 +207,9 @@
             titleIndex: [],
             bounds: [],
 
-            titleColor: '#ccc',
+            titleColor: 'blue lighten-3',
             blankColor: '#fff',
-            disabledColor: '#ffd0e5',
+            disabledColor: 'pink lighten-4',
 
             drawer: null,
             currentStep: 0
@@ -216,12 +218,10 @@
             {
                 setTitle(tableIndex, rowIndex) {
                     if (this.titled[tableIndex]) {
-                        if (rowIndex < this.bounds[tableIndex].top) {
-                            rowIndex = this.bounds[tableIndex].top;
-                        }
                         if (rowIndex >= this.json[tableIndex].length - this.bounds[tableIndex].bottom) {
                             rowIndex = this.json[tableIndex].length - this.bounds[tableIndex].bottom - 1;
                         }
+                        this.bounds[tableIndex].top = rowIndex;
                         this.$set(this.titleIndex, tableIndex, rowIndex);
                     }
                 },
@@ -236,17 +236,20 @@
                 },
 
                 updateTitle(tableIndex) {
-                    if (this.bounds[tableIndex].top + this.bounds[tableIndex].bottom >= this.json[tableIndex].length) {
+                    console.log(this.headers[tableIndex].length);
+                    console.log(this.bounds[tableIndex].left + this.bounds[tableIndex].right);
+                    if (this.bounds[tableIndex].top + this.bounds[tableIndex].bottom >= this.json[tableIndex].length ||
+                        this.bounds[tableIndex].left + this.bounds[tableIndex].right >= this.headers[tableIndex].length) {
                         this.$set(this.titled, tableIndex, false);
                     }
-                    this.setTitle(tableIndex, this.titleIndex[tableIndex]);
+                    this.setTitle(tableIndex, this.bounds[tableIndex].top);
                 },
 
                 getCellStyle(tableIndex, item, field) {
                     var rowIndex = this.getRowIndex(tableIndex, item);
                     var colIndex = this.headerValues[tableIndex].indexOf(field);
 
-                    if (rowIndex === this.titleIndex[tableIndex] && this.titled[tableIndex]) {
+                    if (rowIndex === this.titleIndex[tableIndex] && this.titled[tableIndex] && !(colIndex < this.bounds[tableIndex].left) && !((this.headerValues[tableIndex].length - this.bounds[tableIndex].right) <= colIndex)) {
                         return this.titleColor;
                     }
 
