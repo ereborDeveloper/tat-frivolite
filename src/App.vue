@@ -57,11 +57,41 @@
                                                 <v-container grid-list-md>
                                                     <v-layout align-center
                                                               justify-center>
-                                                        <v-checkbox
-                                                                v-model="titled[index-1]"
-                                                                :label="`Лист содержит заголовок`"
-                                                                @change="toggleTitle"
-                                                        ></v-checkbox>
+                                                        <v-flex xs12 sm6 md2>
+                                                            <v-text-field v-model.number="bounds[index-1].left"
+                                                                          type="number"
+                                                                          label="Отступ слева"
+                                                            ></v-text-field>
+                                                        </v-flex>
+                                                        <v-flex xs12 sm6 md2>
+                                                            <v-text-field @click="updateTitle(index-1)"
+                                                                          v-model.number="bounds[index-1].top"
+                                                                          type="number"
+                                                                          label="Отступ сверху"
+                                                            ></v-text-field>
+                                                        </v-flex>
+                                                        <v-flex xs12 sm6 md2>
+                                                            <v-text-field v-model.number="bounds[index-1].right"
+                                                                          type="number"
+                                                                          label="Отступ справа"
+                                                            ></v-text-field>
+                                                        </v-flex>
+                                                        <v-flex xs12 sm6 md2>
+                                                            <v-text-field @click="updateTitle(index-1)"
+                                                                          v-model.number="bounds[index-1].bottom"
+                                                                          type="number"
+                                                                          label="Отступ снизу"
+                                                            ></v-text-field>
+                                                        </v-flex>
+                                                    </v-layout>
+                                                    <v-layout>
+                                                        <v-flex xs12>
+                                                            <v-checkbox
+                                                                    v-model="titled[index-1]"
+                                                                    :label="`Лист содержит заголовок`"
+                                                                    @change="updateTitle(index-1)"
+                                                            ></v-checkbox>
+                                                        </v-flex>
                                                     </v-layout>
                                                     <v-layout align-center
                                                               justify-center>
@@ -74,10 +104,12 @@
                                                                           class="elevation-1"
                                                             >
                                                                 <template v-slot:item="{item}">
-                                                                    <tr @click="setTitle(item)"
-                                                                        :style="{backgroundColor: rowBackground[0][getIndex(item)].color}">
-                                                                        <template v-for="value in headerValues">
-                                                                            <td>{{item[value]}}</td>
+                                                                    <tr @click="setTitle(index-1, json[index-1].indexOf(item))">
+                                                                        <template
+                                                                                v-for="field in headerValues[index-1]">
+                                                                            <td :style="{backgroundColor: getCellStyle(index-1, item, field)}">
+                                                                                {{item[field]}}
+                                                                            </td>
                                                                         </template>
                                                                     </tr>
                                                                 </template>
@@ -170,40 +202,63 @@
             headerValues: [],
             json: [],
             titled: [],
+            titleIndex: [],
+            bounds: [],
 
-            titleIndex: 0,
             titleColor: '#ccc',
             blankColor: '#fff',
-            rowBackground: [],
+            disabledColor: '#ffd0e5',
 
             drawer: null,
             currentStep: 0
         }),
         methods:
             {
-                toggleTitle() {
-                    if (this.titled[0]) {
-                        this.$set(this.rowBackground[0][0], 'color', this.titleColor);
+                setTitle(tableIndex, rowIndex) {
+                    if (this.titled[tableIndex]) {
+                        if (rowIndex < this.bounds[tableIndex].top) {
+                            rowIndex = this.bounds[tableIndex].top;
+                        }
+                        if (rowIndex >= this.json[tableIndex].length - this.bounds[tableIndex].bottom) {
+                            rowIndex = this.json[tableIndex].length - this.bounds[tableIndex].bottom - 1;
+                        }
+                        this.$set(this.titleIndex, tableIndex, rowIndex);
+                    }
+                },
+
+                getRowIndex(tableIndex, item) {
+                    var rowIndex = this.json[tableIndex].indexOf(item);
+                    return rowIndex;
+                },
+
+                getColumnIndex(tableIndex, index) {
+                    console.log(index);
+                },
+
+                updateTitle(tableIndex) {
+                    if (this.bounds[tableIndex].top + this.bounds[tableIndex].bottom >= this.json[tableIndex].length) {
+                        this.$set(this.titled, tableIndex, false);
+                    }
+                    this.setTitle(tableIndex, this.titleIndex[tableIndex]);
+                },
+
+                getCellStyle(tableIndex, item, field) {
+                    var rowIndex = this.getRowIndex(tableIndex, item);
+                    var colIndex = this.headerValues[tableIndex].indexOf(field);
+
+                    if (rowIndex === this.titleIndex[tableIndex] && this.titled[tableIndex]) {
+                        return this.titleColor;
+                    }
+
+                    if (colIndex < this.bounds[tableIndex].left ||
+                        (this.headerValues[tableIndex].length - this.bounds[tableIndex].right) <= colIndex ||
+                        (rowIndex < this.bounds[tableIndex].top) ||
+                        (this.json[tableIndex].length - this.bounds[tableIndex].bottom) <= rowIndex
+                    ) {
+                        return this.disabledColor;
                     } else {
-                        this.$set(this.rowBackground[0][this.titleIndex], 'color', this.blankColor);
-                        this.titleIndex = 0;
+                        return this.blankColor;
                     }
-                },
-
-                setTitle(item) {
-                    if (this.titled[0]) {
-                        // Пока что для первой таблицы
-                        var index = this.json[0].indexOf(item);
-                        this.$set(this.rowBackground[0][this.titleIndex], 'color', this.blankColor);
-                        this.titleIndex = index;
-                        this.$set(this.rowBackground[0][index], 'color', this.titleColor);
-                    }
-                },
-
-
-                getIndex(item) {
-                    var index = this.json[0].indexOf(item);
-                    return index;
                 }
             }
     }
