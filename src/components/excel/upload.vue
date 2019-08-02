@@ -152,6 +152,7 @@
                     this.state.titleIndex.push(-1);
                     this.state.bounds.push({left: 0, top: 0, right: 0, bottom: 0});
                     this.state.skip.push({v: "", h: ""});
+                    this.state.skippedArray.push({v: [], h: []});
                 }
             }
         }

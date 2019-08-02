@@ -108,22 +108,27 @@
 
                                                             <v-expansion-panel>
                                                                 <v-expansion-panel-header>Пропуск колонок и столбцов
+                                                                    (через запятую)
                                                                 </v-expansion-panel-header>
                                                                 <v-expansion-panel-content>
-                                                                    <v-flex xs12 sm6 md2>
-                                                                        <v-text-field
-                                                                                @click="updateTitle(index-1)"
-                                                                                v-model="skip[index-1].h"
-                                                                                label="По горизонтали"
-                                                                        ></v-text-field>
-                                                                    </v-flex>
-                                                                    <v-flex xs12 sm6 md2>
-                                                                        <v-text-field
-                                                                                @click="updateTitle(index-1)"
-                                                                                v-model="skip[index-1].v"
-                                                                                label="По вертикали"
-                                                                        ></v-text-field>
-                                                                    </v-flex>
+                                                                    <v-layout align-center
+                                                                              justify-center>
+                                                                        <v-flex xs12 sm6 md2>
+                                                                            <v-text-field
+                                                                                    v-model="skip[index-1].h"
+                                                                                    @change="updateHorizontalSkip(index-1)"
+                                                                                    label="По горизонтали"
+                                                                            ></v-text-field>
+                                                                        </v-flex>
+                                                                        <v-flex xs12 sm6 md2>
+                                                                            <v-text-field
+                                                                                    v-model="skip[index-1].v"
+                                                                                    @change="updateVerticalSkip(index-1)"
+                                                                                    label="По вертикали"
+                                                                            ></v-text-field>
+                                                                        </v-flex>
+                                                                    </v-layout>
+
                                                                 </v-expansion-panel-content>
                                                             </v-expansion-panel>
                                                         </v-expansion-panels>
@@ -173,7 +178,7 @@
                                             >
                                                 <v-btn
                                                         color="primary"
-                                                        @click="currentStep = 3"
+                                                        @click="prepareData()"
                                                 >
                                                     Продолжить
                                                 </v-btn>
@@ -186,7 +191,18 @@
                                 <v-stepper-content step="3">
                                     <v-card>
                                         <v-card-title></v-card-title>
-                                        <v-card-text></v-card-text>
+                                        <v-card-text>
+                                            <template v-for="index in preparedJson.length">
+                                                <v-data-table dense
+                                                              :headers="preparedHeaders[index-1]"
+                                                              :items="preparedJson[index-1]"
+                                                              :items-per-page="25"
+                                                              hide-default-header
+                                                              class="elevation-1"
+                                                >
+                                                </v-data-table>
+                                            </template>
+                                        </v-card-text>
                                         <v-card-actions>
                                             <v-layout
                                                     align-center
@@ -250,10 +266,14 @@
             titleIndex: [],
             bounds: [],
             skip: [],
+            skippedArray: [],
 
             titleStyle: 'title-style',
             defaultStyle: '',
             disabledStyle: 'disabled-style',
+
+            preparedHeaders: [],
+            preparedJson: [],
 
             drawer: null,
             currentStep: 0
@@ -279,6 +299,7 @@
                 },
 
                 updateTitle(tableIndex) {
+
 
                     //TODO: Ограничение максимального ввода
 
@@ -309,20 +330,51 @@
                     var rowIndex = this.getRowIndex(tableIndex, item);
                     var colIndex = this.headerValues[tableIndex].indexOf(field);
 
-                    if (rowIndex === this.titleIndex[tableIndex] && this.titled[tableIndex] && !(colIndex < this.bounds[tableIndex].left) && !((this.headerValues[tableIndex].length - this.bounds[tableIndex].right) <= colIndex)) {
+                    if (rowIndex === this.titleIndex[tableIndex] &&
+                        this.titled[tableIndex] &&
+                        !(colIndex < this.bounds[tableIndex].left) &&
+                        !((this.headerValues[tableIndex].length - this.bounds[tableIndex].right) <= colIndex) &&
+                        !(this.skippedArray[tableIndex].h.includes((rowIndex + 1).toString())) &&
+                        !this.skippedArray[tableIndex].v.includes((colIndex + 1).toString())
+                    ) {
                         return this.titleStyle;
                     }
 
                     if (colIndex < this.bounds[tableIndex].left ||
                         (this.headerValues[tableIndex].length - this.bounds[tableIndex].right) <= colIndex ||
                         (rowIndex < this.bounds[tableIndex].top) ||
-                        (this.json[tableIndex].length - this.bounds[tableIndex].bottom) <= rowIndex
+                        (this.json[tableIndex].length - this.bounds[tableIndex].bottom) <= rowIndex ||
+                        this.skippedArray[tableIndex].h.includes((rowIndex + 1).toString()) ||
+                        this.skippedArray[tableIndex].v.includes((colIndex + 1).toString())
                     ) {
                         return this.disabledStyle;
                     } else {
                         return this.defaultStyle;
                     }
+                },
+                updateHorizontalSkip(tableIndex) {
+                    this.skippedArray[tableIndex].h = this.skip[tableIndex].h.replace(/\s/g, '').split(",");
+                },
+                updateVerticalSkip(tableIndex) {
+                    this.skippedArray[tableIndex].v = this.skip[tableIndex].v.replace(/\s/g, '').split(",");
+                },
+                prepareData() {
+                    this.preparedHeaders = [];
+                    this.preparedJson = [];
 
+                    this.currentStep = 3;
+                    console.log(this.json.length);
+                    this.preparedHeaders = this.headers;
+
+                    for (var tableIndex in this.json) {
+                        this.preparedJson.push([]);
+                        for (var i in this.json[tableIndex]) {
+                            if (i >= this.bounds[tableIndex].top &&
+                                i < this.json[tableIndex].length - this.bounds[tableIndex].bottom) {
+                                this.preparedJson[tableIndex].push(this.json[tableIndex][i])
+                            }
+                        }
+                    }
                 }
             }
     }
