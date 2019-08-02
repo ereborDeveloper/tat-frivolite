@@ -55,41 +55,81 @@
                                         <v-card-text>
                                             <template v-for="index in json.length">
                                                 <v-container grid-list-md>
-                                                    <v-layout align-center
-                                                              justify-center>
-                                                        <v-flex xs12 sm6 md2>
-                                                            <v-text-field v-model.number="bounds[index-1].left"
-                                                                          @click="updateTitle(index-1)"
-                                                                          type="number"
-                                                                          label="Отступ слева"
-                                                                          min="0"
-                                                            ></v-text-field>
-                                                        </v-flex>
-                                                        <v-flex xs12 sm6 md2>
-                                                            <v-text-field @click="updateTitle(index-1)"
-                                                                          v-model.number="bounds[index-1].top"
-                                                                          type="number"
-                                                                          label="Отступ сверху"
-                                                                          min="0"
-                                                            ></v-text-field>
-                                                        </v-flex>
-                                                        <v-flex xs12 sm6 md2>
-                                                            <v-text-field v-model.number="bounds[index-1].right"
-                                                                          @click="updateTitle(index-1)"
-                                                                          type="number"
-                                                                          label="Отступ справа"
-                                                                          min="0"
-                                                            ></v-text-field>
-                                                        </v-flex>
-                                                        <v-flex xs12 sm6 md2>
-                                                            <v-text-field @mousedown="updateTitle(index-1)"
-                                                                          v-model.number="bounds[index-1].bottom"
-                                                                          type="number"
-                                                                          label="Отступ снизу"
-                                                                          min="0"
-                                                            ></v-text-field>
-                                                        </v-flex>
+                                                    <v-layout>
+                                                        <v-expansion-panels>
+                                                            <v-expansion-panel>
+                                                                <v-expansion-panel-header>Отступы (для небольших
+                                                                    таблиц)
+                                                                </v-expansion-panel-header>
+                                                                <v-expansion-panel-content>
+                                                                    <v-layout align-center
+                                                                              justify-center>
+
+                                                                        <v-flex xs12 sm6 md2>
+                                                                            <v-text-field
+                                                                                    v-model.number="bounds[index-1].left"
+                                                                                    @click="updateTitle(index-1)"
+                                                                                    type="number"
+                                                                                    label="Отступ слева"
+                                                                                    min="0"
+                                                                            ></v-text-field>
+                                                                        </v-flex>
+                                                                        <v-flex xs12 sm6 md2>
+                                                                            <v-text-field
+                                                                                    @click="updateTitle(index-1)"
+                                                                                    v-model.number="bounds[index-1].top"
+                                                                                    type="number"
+                                                                                    label="Отступ сверху"
+                                                                                    min="0"
+                                                                            ></v-text-field>
+                                                                        </v-flex>
+                                                                        <v-flex xs12 sm6 md2>
+                                                                            <v-text-field
+                                                                                    v-model.number="bounds[index-1].right"
+                                                                                    @click="updateTitle(index-1)"
+                                                                                    type="number"
+                                                                                    label="Отступ справа"
+                                                                                    min="0"
+                                                                            ></v-text-field>
+                                                                        </v-flex>
+                                                                        <v-flex xs12 sm6 md2>
+                                                                            <v-text-field
+                                                                                    @mousedown="updateTitle(index-1)"
+                                                                                    v-model.number="bounds[index-1].bottom"
+                                                                                    type="number"
+                                                                                    label="Отступ снизу"
+                                                                                    min="0"
+                                                                            ></v-text-field>
+                                                                        </v-flex>
+                                                                    </v-layout>
+
+                                                                </v-expansion-panel-content>
+                                                            </v-expansion-panel>
+
+                                                            <v-expansion-panel>
+                                                                <v-expansion-panel-header>Пропуск колонок и столбцов
+                                                                </v-expansion-panel-header>
+                                                                <v-expansion-panel-content>
+                                                                    <v-flex xs12 sm6 md2>
+                                                                        <v-text-field
+                                                                                @click="updateTitle(index-1)"
+                                                                                v-model="skip[index-1].h"
+                                                                                label="По горизонтали"
+                                                                        ></v-text-field>
+                                                                    </v-flex>
+                                                                    <v-flex xs12 sm6 md2>
+                                                                        <v-text-field
+                                                                                @click="updateTitle(index-1)"
+                                                                                v-model="skip[index-1].v"
+                                                                                label="По вертикали"
+                                                                        ></v-text-field>
+                                                                    </v-flex>
+                                                                </v-expansion-panel-content>
+                                                            </v-expansion-panel>
+                                                        </v-expansion-panels>
                                                     </v-layout>
+
+
                                                     <v-layout>
                                                         <v-flex xs12>
                                                             <v-checkbox
@@ -197,7 +237,6 @@
 
     import ExcelUpload from "@/components/excel/upload";
 
-
     export default {
         components: {ExcelUpload},
         props: {
@@ -210,10 +249,11 @@
             titled: [],
             titleIndex: [],
             bounds: [],
+            skip: [],
 
-            titleColor: 'blue lighten-3',
-            blankColor: '#fff',
-            disabledColor: 'pink lighten-4',
+            titleStyle: 'title-style',
+            defaultStyle: '',
+            disabledStyle: 'disabled-style',
 
             drawer: null,
             currentStep: 0
@@ -231,8 +271,7 @@
                 },
 
                 getRowIndex(tableIndex, item) {
-                    var rowIndex = this.json[tableIndex].indexOf(item);
-                    return rowIndex;
+                    return this.json[tableIndex].indexOf(item);
                 },
 
                 getColumnIndex(tableIndex, index) {
@@ -241,7 +280,7 @@
 
                 updateTitle(tableIndex) {
 
-                    //TODO: Это безобразие
+                    //TODO: Ограничение максимального ввода
 
                     if (this.bounds[tableIndex].top > this.json[tableIndex].length) {
                         this.bounds[tableIndex].top = this.json[tableIndex].length;
@@ -271,7 +310,7 @@
                     var colIndex = this.headerValues[tableIndex].indexOf(field);
 
                     if (rowIndex === this.titleIndex[tableIndex] && this.titled[tableIndex] && !(colIndex < this.bounds[tableIndex].left) && !((this.headerValues[tableIndex].length - this.bounds[tableIndex].right) <= colIndex)) {
-                        return this.titleColor;
+                        return this.titleStyle;
                     }
 
                     if (colIndex < this.bounds[tableIndex].left ||
@@ -279,11 +318,89 @@
                         (rowIndex < this.bounds[tableIndex].top) ||
                         (this.json[tableIndex].length - this.bounds[tableIndex].bottom) <= rowIndex
                     ) {
-                        return this.disabledColor;
+                        return this.disabledStyle;
                     } else {
-                        return this.blankColor;
+                        return this.defaultStyle;
                     }
+
                 }
             }
     }
 </script>
+
+<style>
+
+    .title-style {
+        background: linear-gradient(to top, #fff -20%, #82B1FF 100%);
+        background-size: 100% 200%;
+        color: #fff;
+        transition: transition 0.5s ease, opacity 0.5s ease;
+        animation-name: title;
+        animation-duration: 0.2s;
+        animation-timing-function: ease-in-out;
+        animation-play-state: running;
+
+        -webkit-animation-name: title;
+        -webkit-animation-duration: 0.2s;
+        -webkit-animation-timing-function: ease-in-out;
+        -webkit-animation-play-state: running;
+    }
+
+    @-webkit-keyframes title {
+        0% {
+            color: #000;
+            background-color: #fff;
+            background-position-y: 100%;
+        }
+        100.0% {
+            color: #fff;
+            background-color: #82B1FF;
+            background-position-y: 20%;
+        }
+    }
+
+    @keyframes title {
+        0% {
+            background-color: #fff;
+            background-position-y: 100%;
+        }
+        100.0% {
+            background-color: #82B1FF;
+            background-position-y: 0%;
+        }
+    }
+
+    .disabled-style {
+        background: #EEEEEE;
+        color: #999;
+        background-size: 400% 400%;
+        transition: transition 0.5s ease, opacity 0.5s ease;
+        animation-name: disabled;
+        animation-duration: 0.5s;
+        animation-timing-function: ease-in;
+        animation-play-state: running;
+
+        -webkit-animation-name: disabled;
+        -webkit-animation-duration: 0.5s;
+        -webkit-animation-timing-function: ease-in;
+        -webkit-animation-play-state: running;
+    }
+
+    @-webkit-keyframes disabled {
+        0% {
+            background-color: #fff;
+        }
+        100.0% {
+            background-color: #EEEEEE;
+        }
+    }
+
+    @keyframes disabled {
+        0% {
+            background-color: #fff;
+        }
+        100.0% {
+            background-color: #EEEEEE;
+        }
+    }
+</style>
